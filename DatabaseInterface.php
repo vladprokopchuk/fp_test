@@ -4,7 +4,7 @@ namespace FpDbTest;
 
 interface DatabaseInterface
 {
-    public function buildQuery(string $query, array $args = []): string;
+    public function buildQuery(string $query, array $params = []): string;
 
     public function skip();
 }
