@@ -23,15 +23,6 @@ class Database implements DatabaseInterface {
      */
     public function buildQuery(string $query, array $params = []): string
     {
-        // Count placeholders number
-        $placeholderCount = preg_match_all('/\?[\#a|d|f]?/', $query);
-
-        // Check if arguments number not less than placeholders
-        if (count($params) < $placeholderCount) {
-            throw new \Exception("Wrong arguments number");
-        }
-
-        // Check {} blocks
         $query = preg_replace_callback('/\{([^\{\}]+)\}/', function ($matches) use ($params) {
             if (in_array($this->skip(), $params, true))
             {
@@ -61,7 +52,6 @@ class Database implements DatabaseInterface {
                     // Assoc array with args
                     $assignments = array_map(function ($key, $value) {
                         $value = is_null($value) ? 'NULL' : "'" . addslashes($value) . "'";
-
                         return '`' . addslashes($key) . '` = ' . $value;
                     }, array_keys($param), $param);
                     $query = preg_replace('/\?a/', implode(', ', $assignments), $query, 1);
@@ -69,10 +59,14 @@ class Database implements DatabaseInterface {
             } elseif (is_bool($param))
             {
                 $query = preg_replace('/\?d/', (int)$param, $query, 1);
-            } elseif (is_numeric($param))
+            } elseif (is_numeric($param))// ?d and $f replacement
             {
-                $query = preg_replace('/\?d/', (int)$param, $query, 1);
-                $query = preg_replace('/\?f/', (float)$param, $query, 1);
+                if (filter_var($param, FILTER_VALIDATE_INT))
+                {
+                    $query = preg_replace('/\?d/', (int)$param, $query, 1);
+                }else{
+                    $query = preg_replace('/\?f/', (float)$param, $query, 1);
+                }
             } else
             {
                 if ($param !== $this->skip())
@@ -89,7 +83,6 @@ class Database implements DatabaseInterface {
                 }
             }
         }
-
         return $query;
     }
 
